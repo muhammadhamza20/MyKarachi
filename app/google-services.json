@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "609230802974",
+    "firebase_url": "https://my-karachi-2383d.firebaseio.com",
+    "project_id": "my-karachi-2383d",
+    "storage_bucket": "my-karachi-2383d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:609230802974:android:90527882e3f30aaf",
+        "android_client_info": {
+          "package_name": "com.example.muhammadhamza.mykarachi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "609230802974-gh6mb94bc9r9jkbj15573quuo62pjbvg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.muhammadhamza.mykarachi",
+            "certificate_hash": "63b27ebcca05a65924f4211c4fba1174682cbb85"
+          }
+        },
+        {
+          "client_id": "609230802974-5an674tqrif25kcnnusuatsrn8illvds.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZiVdDg_CQ2yOKhSyF4nrBiexuPBAzj6Y"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "609230802974-5an674tqrif25kcnnusuatsrn8illvds.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

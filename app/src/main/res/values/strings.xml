@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">My Karachi</string>
+    <string name="map_heading">MAP</string>
+    <string name="feeds_heading">FEEDS</string>
+    <string name="user_experinced_heading">UPDATES</string>
+    <string name="google_maps_API_key">AIzaSyDlo3Z1kIhEu_iWcTU_N7Y9wCiCm6ldTeM</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
