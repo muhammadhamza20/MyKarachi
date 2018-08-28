@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.ViewPager;
@@ -35,6 +36,11 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference myRefChildFeeds , myRefChildUpdates;
     private ArrayList<String> feedsArray = new ArrayList<>();
     private ArrayList<String> updatesArray = new ArrayList<>();
+
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

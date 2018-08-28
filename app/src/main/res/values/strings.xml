@@ -4,6 +4,10 @@
     <string name="feeds_heading">FEEDS</string>
     <string name="user_experinced_heading">UPDATES</string>
     <string name="google_maps_API_key">AIzaSyDlo3Z1kIhEu_iWcTU_N7Y9wCiCm6ldTeM</string>
+    <string name="permission_rationale">Permissions were denied, Allow permissions to operate</string>
+    <string name="ok">Ok</string>
+    <string name="settings">Settings</string>
+    <string name="permission_denied_explanation">You need to enable permission and restart app</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

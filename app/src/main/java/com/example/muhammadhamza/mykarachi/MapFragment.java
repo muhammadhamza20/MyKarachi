@@ -6,9 +6,14 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -74,22 +79,68 @@ public class MapFragment extends Fragment implements GoogleApiClient.OnConnectio
     private static final float DEFAULT_ZOOM = 15f;
     private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(new LatLng(-40, -168), new LatLng(71, 136));
     private static final int PLACE_PICKER_REQUEST = 1;
-
-
+    //    private Fragment fragment;
+    View view;
     private AutoCompleteTextView searchText;
     private ImageView gps, info, placePicker;
-//    private Fragment fragment;
-
     private boolean LocationPermissionGranted = false;
     private FusedLocationProviderClient LocationProvider;
     private GoogleMap gMap;
-//    private PlaceDetectionClient placeDetectionClient;
+    //    private PlaceDetectionClient placeDetectionClient;
     private GeoDataClient geoDataClient;
     private GoogleApiClient googleApiClient;
     private PlaceAutoCompleteAdapter adapter;
     private PlaceInfo placeObj;
     private Marker marker;
+    private ResultCallback<PlaceBuffer> updatedPlaceDetailsCallBack = new ResultCallback<PlaceBuffer>() {
+        @Override
+        public void onResult(@NonNull PlaceBuffer places) {
+            if (!places.getStatus().isSuccess()) {
+                Log.d(TAG, "onResult: place query did not complete. " + places.getStatus().toString());
+                places.release();
+                return;
+            }
 
+            final Place place = places.get(0);
+            try {
+                placeObj = new PlaceInfo();
+                placeObj.setAddress(place.getAddress().toString());
+                Log.d(TAG, "onResult: Place Address: " + placeObj.getAddress().toString());
+//                placeObj.setAttributions(place.getAttributions().toString());
+//                Log.d(TAG, "onResult: Place Attributions: " + placeObj.getAttributions().toString());
+                placeObj.setLatlng(place.getLatLng());
+                Log.d(TAG, "onResult: Place LatLng: " + placeObj.getLatlng());
+                placeObj.setId(place.getId().toString());
+                Log.d(TAG, "onResult: Place Id: " + placeObj.getId().toString());
+                placeObj.setName(place.getName().toString());
+                Log.d(TAG, "onResult: Place Name: " + placeObj.getName().toString());
+                placeObj.setPhoneNumber(place.getPhoneNumber().toString());
+                Log.d(TAG, "onResult: Place Phone Number: " + placeObj.getPhoneNumber().toString());
+                placeObj.setRating(place.getRating());
+                Log.d(TAG, "onResult: Place Rating: " + placeObj.getRating());
+                placeObj.setWebsiteUri(place.getWebsiteUri());
+                Log.d(TAG, "onResult: Place Website URI: " + placeObj.getWebsiteUri());
+
+                Log.d(TAG, "onResult: Place Detail: " + placeObj.toString());
+            } catch (NullPointerException e) {
+                Log.d(TAG, "onResult: NullPointerException: " + e.getMessage());
+            }
+
+            moveCamera(new LatLng(place.getViewport().getCenter().latitude, place.getViewport().getCenter().longitude), DEFAULT_ZOOM, placeObj);
+            places.release();
+        }
+    };
+    private AdapterView.OnItemClickListener autoComplete = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            hideKeyboard();
+            final AutocompletePrediction item = adapter.getItem(position);
+            final String placeID = item.getPlaceId();
+
+            PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(googleApiClient, placeID);
+            placeResult.setResultCallback(updatedPlaceDetailsCallBack);
+        }
+    };
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
@@ -126,7 +177,7 @@ public class MapFragment extends Fragment implements GoogleApiClient.OnConnectio
                 .build();
 
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_map, container, false);
+        view = inflater.inflate(R.layout.fragment_map, container, false);
         searchText = (AutoCompleteTextView) view.findViewById(R.id.input_search);
         gps = (ImageView) view.findViewById(R.id.GPS);
         info = (ImageView) view.findViewById(R.id.info);
@@ -281,74 +332,45 @@ public class MapFragment extends Fragment implements GoogleApiClient.OnConnectio
         hideKeyboard();
     }
 
-    private void geoLocate(){
-        Log.d(TAG , "geoLocate: Locating the entered Location!");
+    private void geoLocate() {
+        Log.d(TAG, "geoLocate: Locating the entered Location!");
         String searchString = searchText.getText().toString();
         Geocoder geoCoder = new Geocoder(getActivity());
         List<Address> list = new ArrayList<>();
 
-        try{
+        try {
             list = geoCoder.getFromLocationName(searchString, 1);
-        }catch(IOException e){
+        } catch (IOException e) {
             Log.d(TAG, "geoLocate: IOEXCEPTION: " + e.getMessage());
         }
 
-        if(list.size()>0) {
+        if (list.size() > 0) {
             android.location.Address address = list.get(0);
             Log.d(TAG, "Found a location: address: " + address.toString());
             //Toast.makeText(MapActivity.this, "Found a location: address: " + address.toString() , Toast.LENGTH_SHORT).show();
-            moveCamera(new LatLng(address.getLatitude(), address.getLongitude()) , DEFAULT_ZOOM, address.getAddressLine(0));
+            moveCamera(new LatLng(address.getLatitude(), address.getLongitude()), DEFAULT_ZOOM, address.getAddressLine(0));
         }
 
     }
 
-    public void getPermissions(){
-        Log.d(TAG , "getPermissions: Called!");
-        String[] permissions = {android.Manifest.permission.ACCESS_FINE_LOCATION , android.Manifest.permission.ACCESS_COARSE_LOCATION};
-        if(ContextCompat.checkSelfPermission(getActivity(),
+    public void getPermissions() {
+        Log.d(TAG, "getPermissions: Called!");
+//        String[] permissions = {android.Manifest.permission.ACCESS_FINE_LOCATION , android.Manifest.permission.ACCESS_COARSE_LOCATION};
+        if (ContextCompat.checkSelfPermission(getActivity(),
                 FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             if (ContextCompat.checkSelfPermission(getActivity(),
                     COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                 // Permissions Granted
-                Log.d(TAG , "getPermissions: Permission Granted!");
+                Log.d(TAG, "getPermissions: Permission Granted!");
                 LocationPermissionGranted = true;
                 initMap();
+            } else {
+                Log.d(TAG, "getPermissions: inside ELSE Requesting Persmissions!");
+                requesttPermissions();
             }
-            else {
-                Log.d(TAG , "getPermissions: inside ELSE Requesting Persmissions!");
-                ActivityCompat.requestPermissions(getActivity(),
-                        permissions,
-                        LOCATION_PERMISSION_REQUEST_CODE);
-            }
-        }
-        else {
-            Log.d(TAG , "getPermissions: outside ELSE Requesting Persmissions!");
-            ActivityCompat.requestPermissions(getActivity(),
-                    permissions,
-                    LOCATION_PERMISSION_REQUEST_CODE);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        LocationPermissionGranted=false;
-        Log.d(TAG , "onRequestPermissionsResult: Getting results..!");
-        switch(requestCode) {
-            case LOCATION_PERMISSION_REQUEST_CODE: {
-                if(grantResults.length>0) {
-                    for(int i=0; i<grantResults.length; i++) {
-                        if(grantResults[i] != PackageManager.PERMISSION_GRANTED){
-                            Log.d(TAG , "onRequestPermissionsResult: Permission Failed..!");
-                            LocationPermissionGranted=false;
-                            return;
-                        }
-                    }
-                    Log.d(TAG , "onRequestPermissionsResult: Permission Granted!");
-                    LocationPermissionGranted=true;
-                    //Initialize Map
-                    initMap();
-                }
-            }
+        } else {
+            Log.d(TAG, "getPermissions: outside ELSE Requesting Persmissions!");
+            requesttPermissions();
         }
     }
 
@@ -356,62 +378,79 @@ public class MapFragment extends Fragment implements GoogleApiClient.OnConnectio
     ************************************ GOOGLE API PLACES ******************************************8
      */
 
-    private AdapterView.OnItemClickListener autoComplete = new AdapterView.OnItemClickListener() {
-        @Override
-        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-            hideKeyboard();
-            final AutocompletePrediction item = adapter.getItem(position);
-            final String placeID = item.getPlaceId();
+    private void requesttPermissions() {
+        final String[] permissions = {android.Manifest.permission.ACCESS_FINE_LOCATION, android.Manifest.permission.ACCESS_COARSE_LOCATION};
+        boolean shouldProvideRationaleFine =
+                shouldShowRequestPermissionRationale(FINE_LOCATION);
 
-            PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi.getPlaceById(googleApiClient, placeID);
-            placeResult.setResultCallback(updatedPlaceDetailsCallBack);
+        if (shouldProvideRationaleFine) {
+            Log.d(TAG, "Displaying permission rationale to provide additional context.");
+            Snackbar.make(
+                    view.findViewById(R.id.map),
+                    R.string.permission_rationale,
+                    Snackbar.LENGTH_INDEFINITE)
+                    .setAction(R.string.ok, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            // Request permission
+                            requestPermissions(permissions, LOCATION_PERMISSION_REQUEST_CODE);
+                        }
+                    })
+                    .show();
+        } else {
+            Log.i(TAG, "Requesting permission");
+            requestPermissions(permissions, LOCATION_PERMISSION_REQUEST_CODE);
         }
-    };
+    }
 
-    private ResultCallback<PlaceBuffer> updatedPlaceDetailsCallBack = new ResultCallback<PlaceBuffer>() {
-        @Override
-        public void onResult(@NonNull PlaceBuffer places) {
-            if(!places.getStatus().isSuccess()) {
-                Log.d(TAG, "onResult: place query did not complete. " + places.getStatus().toString());
-                places.release();
-                return;
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        LocationPermissionGranted = false;
+        Log.d(TAG, "onRequestPermissionsResult: Getting results..!");
+        switch (requestCode) {
+            case LOCATION_PERMISSION_REQUEST_CODE: {
+                if (grantResults.length > 0) {
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            Log.d(TAG, "onRequestPermissionsResult: Permission Failed..!");
+                            LocationPermissionGranted = false;
+                            Log.d(TAG, "Ended up here in else!!!");
+                            Snackbar.make(
+                                    view.findViewById(R.id.mapLayout),
+                                    R.string.permission_denied_explanation,
+                                    Snackbar.LENGTH_INDEFINITE)
+                                    .setAction(R.string.settings, new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View view) {
+                                            // Build intent that displays the App settings screen.
+                                            Intent intent = new Intent();
+                                            intent.setAction(
+                                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                                            Uri uri = Uri.fromParts("package",
+                                                    BuildConfig.APPLICATION_ID, null);
+                                            intent.setData(uri);
+                                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            startActivity(intent);
+                                        }
+                                    })
+                                    .show();
+                            return;
+                        }
+                    }
+                    Log.d(TAG, "onRequestPermissionsResult: Permission Granted!");
+                    LocationPermissionGranted = true;
+                    //Initialize Map
+                    initMap();
+                }
             }
-
-            final Place place = places.get(0);
-            try {
-                placeObj = new PlaceInfo();
-                placeObj.setAddress(place.getAddress().toString());
-                Log.d(TAG, "onResult: Place Address: " + placeObj.getAddress().toString());
-//                placeObj.setAttributions(place.getAttributions().toString());
-//                Log.d(TAG, "onResult: Place Attributions: " + placeObj.getAttributions().toString());
-                placeObj.setLatlng(place.getLatLng());
-                Log.d(TAG, "onResult: Place LatLng: " + placeObj.getLatlng());
-                placeObj.setId(place.getId().toString());
-                Log.d(TAG, "onResult: Place Id: " + placeObj.getId().toString());
-                placeObj.setName(place.getName().toString());
-                Log.d(TAG, "onResult: Place Name: " + placeObj.getName().toString());
-                placeObj.setPhoneNumber(place.getPhoneNumber().toString());
-                Log.d(TAG, "onResult: Place Phone Number: " + placeObj.getPhoneNumber().toString());
-                placeObj.setRating(place.getRating());
-                Log.d(TAG, "onResult: Place Rating: " + placeObj.getRating());
-                placeObj.setWebsiteUri(place.getWebsiteUri());
-                Log.d(TAG, "onResult: Place Website URI: " + placeObj.getWebsiteUri());
-
-                Log.d(TAG, "onResult: Place Detail: " + placeObj.toString());
-            }catch(NullPointerException e){
-                Log.d(TAG, "onResult: NullPointerException: " + e.getMessage());
-            }
-
-            moveCamera(new LatLng(place.getViewport().getCenter().latitude, place.getViewport().getCenter().longitude),DEFAULT_ZOOM, placeObj);
-            places.release();
         }
-    };
+    }
 
     private void hideKeyboard() {
         Log.d(TAG, "HIDEKEYBOARD: ENTERED ");
         //Check if no view has focus
         if (getActivity().getCurrentFocus() != null) {
-            InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(INPUT_METHOD_SERVICE);
+            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(getActivity().getCurrentFocus().getWindowToken(), 0);
             searchText.setCursorVisible(false);
         }
